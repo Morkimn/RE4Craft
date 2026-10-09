@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.1 alpha — installer2 — 2026-10-09
+## 0.3.2 - 2026-10-09
 
 - Redesigned the installer with a dark theme, drawn block/forest artwork, readable folder fields, responsive layout and .NET Framework 4.8 DPI support.
 - Embedded the supplied RIVER SOLO audio with an on/off button; playback ends when the window closes and is absent from CLI operations.
@@ -8,7 +8,7 @@
 - The installation engine, native DLL, guest JAR, Fabric API, installation/uninstallation behavior and game mechanics are unchanged from 0.3.1 alpha. Installer2 is a presentation/audio update only.
 - Added the DPI configuration and audio asset to the explicit release/source allowlists. The interface and music toggle were reviewed before publication.
 
-## 0.3.1 alpha — 2026-10-08
+## 0.3.1 - 2026-10-08
 
 - F10 switches to native RE4 camera, controls and player collision, releases held Minecraft input, hides Minecraft drawing/lights, and reconnects at Leon's current position on return. A duplicated raw/legacy key event that instantly switched back was fixed; both switches were confirmed in gameplay.
 - Minecraft HUD and world drawing stop during native movie/event/death cutscene flags. Every campaign cutscene is not yet tested.
