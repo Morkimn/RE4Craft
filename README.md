@@ -1,4 +1,4 @@
-# RE4Craft — Resident Evil 4 (2005) × Minecraft 26.3
+# RE4Craft - Resident Evil 4 (2005) × Minecraft 26.3
 
 RE4Craft переносит управление, инвентарь, оружие и блоки Майна в окно RE4. Мост использует отдельную общую память `Local\RE4Craft_v1`.
 
