@@ -7,10 +7,10 @@ import shutil
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.3.1-alpha-installer2'
+VERSION = '0.3.2-installer3'
 DOCS = ['README.md', 'GUIDE_RU.md', 'BUILDING.md', 'CHANGELOG.md', 'NOTICE.md', 'LICENSE']
 SCRIPTS = ['Build-Mod.ps1', 'Build-Installer.ps1', 'Fetch-Sources.ps1', 'prepare_fork.py', 'build_guest_patch.py', 'package_release.py']
-TESTS = ['projection.cpp', 'projection.vcxproj', 'GroundPlacement.java']
+TESTS = ['projection.cpp', 'projection.vcxproj', 'GroundPlacement.java', 'InstallerCompatibility.cs']
 source_files = [ROOT/x for x in DOCS + ['.gitignore']]
 source_files += [ROOT/'scripts'/x for x in SCRIPTS]
 source_files += [ROOT/'tests'/x for x in TESTS]

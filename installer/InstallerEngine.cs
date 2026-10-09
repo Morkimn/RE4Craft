@@ -24,7 +24,10 @@ namespace RE4CraftSetup {
  }
  public sealed class InstallerEngine {
   public const string SupportedExe = "19AED4AF0AB06A748FF8744D45AC5580FCD6BE6B6B7E944B1AB8822A00C8EE4A";
-  public const string Version = "0.3.1-alpha";
+  // Fingerprint of the supported image with only its LAA bit and PE checksum cleared.
+  const string SupportedNormalizedExe = "1C121D4CC199616A86375F3AB157BEE2DF1C7D83CB980021778D5A6DD45BF53D";
+  const int SupportedLaaOffset = 0x14e, SupportedChecksumOffset = 0x190;
+  public const string Version = "0.3.2";
   readonly string storage, expectedExe;
   readonly Func<string, byte[]> payload;
   readonly Action<string> log;
@@ -36,6 +39,16 @@ namespace RE4CraftSetup {
   static bool Equal(string a, string b) { return String.Equals(Full(a), Full(b), StringComparison.OrdinalIgnoreCase); }
   public static string Hash(byte[] bytes) { using (var sha = SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", ""); }
   static string FileHash(string file) { return Hash(File.ReadAllBytes(file)); }
+  bool SupportsExecutable(byte[] bytes) {
+   if (Hash(bytes) == expectedExe) return true;
+   if (expectedExe != SupportedExe || bytes.Length < SupportedChecksumOffset + 4) return false;
+   // These offsets belong to the supported PE layout. Every other byte, including
+   // all code, data and remaining headers, must still match its fingerprint.
+   var normalized = (byte[])bytes.Clone();
+   normalized[SupportedLaaOffset] &= 0xdf;
+   Array.Clear(normalized, SupportedChecksumOffset, 4);
+   return Hash(normalized) == SupportedNormalizedExe;
+  }
   string Home(string game) { return Path.Combine(storage, Hash(Encoding.UTF8.GetBytes(Full(game).ToUpperInvariant())).Substring(0, 16)); }
   static string Profile(string prism) { return Path.Combine(prism, "instances", "RE4Craft"); }
   static Dictionary<string, string> Targets(Installation m) {
@@ -83,7 +96,7 @@ namespace RE4CraftSetup {
    string game = Full(gameRoot), prism = Full(prismRoot);
    EnsureClosed(game, prism);
    string exe = Path.Combine(game, "Bin32", "bio4.exe");
-   if (!File.Exists(exe) || FileHash(exe) != expectedExe) throw new IOException("Нужна оригинальная Steam RE4 UHD 1.1.0. Файлы игры не изменены.");
+   if (!File.Exists(exe) || !SupportsExecutable(File.ReadAllBytes(exe))) throw new IOException("Нужна оригинальная Steam RE4 UHD 1.1.0. Файлы игры не изменены.");
    if (!Directory.Exists(Path.Combine(prism, "instances"))) throw new IOException("Укажите папку данных Prism Launcher (с папкой instances). Сначала запустите Prism хотя бы один раз.");
    string home = Home(game), manifest = Path.Combine(home, "installation.json");
    bool updating = File.Exists(manifest);

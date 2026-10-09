@@ -8,6 +8,8 @@ RE4Craft переносит управление, инвентарь, оружи
 
 Возьмите ZIP с установщиком из [Releases](https://github.com/Morkimn/RE4Craft/releases). Полная инструкция: **[GUIDE_RU.md](GUIDE_RU.md)**.
 
+[Исправленный установщик](https://github.com/Morkimn/RE4Craft/releases/tag/v0.3.2-installer3) поддерживает 4GB-патч RE4. Игровая часть без изменений.
+
 1. Настройте Prism Launcher, аккаунт Minecraft Java и Java 25. Закройте обе игры.
 2. Запустите `RE4Craft-Setup.exe`, выберите папку RE4 с `Bin32` и папку данных Prism с `instances`. Нажмите «Установить / обновить».
 3. Запустите RE4 обычным способом через Steam и профиль **RE4Craft** в Prism. После загрузки мира играйте в окне RE4.

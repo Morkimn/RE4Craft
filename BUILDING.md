@@ -54,6 +54,17 @@ msbuild tests/projection.vcxproj /p:Configuration=Release /p:Platform=Win32
 
 Проверка установщика использует новый каталог с искусственными файлами. Она проверяет обновления, первую резервную копию, частичный сбой записи, отказ на неподходящем EXE/повреждённой копии и сохранение нового/существующего мира. `-TestBuild` не добавляет запрос администратора; без CLI-параметров он открывает предпросмотр интерфейса с отключёнными действиями установки/удаления. Такой EXE не предназначен для распространения.
 
+Дополнительная проверка совместимости использует собственный оригинальный `bio4.exe` только для чтения. Соберите обычный установщик, затем выполните:
+
+```powershell
+New-Item -ItemType Directory -Path build/compatibility-tests -Force
+Copy-Item dist/RE4Craft-0.3.2-installer3/RE4Craft-Setup.exe* build/compatibility-tests/
+& "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /out:build\compatibility-tests\InstallerCompatibility.exe /reference:build\compatibility-tests\RE4Craft-Setup.exe tests\InstallerCompatibility.cs
+.\build\compatibility-tests\InstallerCompatibility.exe 'C:\path\to\Resident Evil 4\Bin32\bio4.exe' build/compatibility-tests
+```
+
+Тест создаёт отдельные копии оригинала и вариантов 4GB/LAA/контрольной суммы в новом каталоге `build`, проверяет установку/обновления/удаление, восстановление первого загрузчика и сохранность мира. Правки кода, других флагов заголовка, обрезанный и пустой EXE должны отклоняться до записи. Исходный игровой файл не меняется. Копии EXE остаются локально в игнорируемой папке и не включаются в пакет исходников или выпуск.
+
 ## Установщик и выпуск
 
 ```powershell
@@ -61,6 +72,6 @@ msbuild tests/projection.vcxproj /p:Configuration=Release /p:Platform=Win32
 python scripts/package_release.py
 ```
 
-Итоговый EXE содержит DLL, два модовых JAR, настройки, профиль Prism, руководство и `installer/assets/theme.mp3`. Манифест требует администратора для папок Program Files. Рядом с EXE должен оставаться `RE4Craft-Setup.exe.config` для масштабирования. ZIP содержит EXE, его конфигурацию, документацию, лицензии и контрольные суммы. `package_release.py` составляет исходный пакет по явному списку и проверяет отсутствие игровых файлов, журналов и личных путей. Выпуск интерфейса находится в `dist/RE4Craft-0.3.1-alpha-installer2`; DLL и JAR совпадают с 0.3.1 alpha.
+Итоговый EXE содержит DLL, два модовых JAR, настройки, профиль Prism, руководство и `installer/assets/theme.mp3`. Манифест требует администратора для папок Program Files. Рядом с EXE должен оставаться `RE4Craft-Setup.exe.config` для масштабирования. ZIP содержит EXE, его конфигурацию, документацию, лицензии и контрольные суммы. `package_release.py` составляет исходный пакет по явному списку и проверяет отсутствие игровых файлов, журналов и личных путей. Выпуск установщика находится в `dist/RE4Craft-0.3.2-installer3`; игровые DLL и JAR не изменены.
 
 Установщик не подписан. Сборка на разных машинах может отличаться хешем из-за компилятора и метаданных PE; SHA256SUMS относится к конкретному опубликованному выпуску.

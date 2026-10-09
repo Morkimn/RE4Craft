@@ -18,7 +18,7 @@ $taskResources=@{
     'GUIDE_RU.md' = Join-Path $taskRoot 'GUIDE_RU.md'
     'theme.mp3' = Join-Path $taskRoot 'installer\assets\theme.mp3'
 }
-$taskOut=Join-Path $taskRoot 'dist\RE4Craft-0.3.1-alpha-installer2'
+$taskOut=Join-Path $taskRoot 'dist\RE4Craft-0.3.2-installer3'
 if($TestBuild){$taskOut=Join-Path $taskRoot 'build\installer-tests'}
 if($OutputDirectory){$taskOut=[IO.Path]::GetFullPath($OutputDirectory)}
 New-Item -ItemType Directory -Path $taskOut -Force | Out-Null

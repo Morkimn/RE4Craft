@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2 — исправление установщика — 2026-10-10
+
+- Исправлена установка на RE4 с 4GB-патчем.
+- Оформление, музыка и игровая часть без изменений.
+
 ## 0.3.2 - 2026-10-09
 
 - Redesigned the installer with a dark theme, drawn block/forest artwork, readable folder fields, responsive layout and .NET Framework 4.8 DPI support.
