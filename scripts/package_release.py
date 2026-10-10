@@ -7,14 +7,14 @@ import shutil
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.3.2-installer3'
+VERSION = '0.3.3'
 DOCS = ['README.md', 'GUIDE_RU.md', 'BUILDING.md', 'CHANGELOG.md', 'NOTICE.md', 'LICENSE']
 SCRIPTS = ['Build-Mod.ps1', 'Build-Installer.ps1', 'Fetch-Sources.ps1', 'prepare_fork.py', 'build_guest_patch.py', 'package_release.py']
-TESTS = ['projection.cpp', 'projection.vcxproj', 'GroundPlacement.java', 'InstallerCompatibility.cs']
+TESTS = ['projection.cpp', 'projection.vcxproj', 'GroundPlacement.java', 'InstallerCompatibility.cs', 'GuestIntegration.java']
 source_files = [ROOT/x for x in DOCS + ['.gitignore']]
 source_files += [ROOT/'scripts'/x for x in SCRIPTS]
 source_files += [ROOT/'tests'/x for x in TESTS]
-for folder, suffixes in [('src', {'.h', '.cpp', '.java'}), ('installer', {'.cs', '.json', '.manifest', '.config'}), ('licenses', {'.txt', '.rst'})]:
+for folder, suffixes in [('src', {'.h', '.cpp', '.java', '.inc'}), ('installer', {'.cs', '.json', '.manifest', '.config'}), ('licenses', {'.txt', '.rst'})]:
     source_files += sorted(p for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix in suffixes)
 source_files += [ROOT/'installer/assets/README.md', ROOT/'installer/assets/theme.mp3']
 assert len(source_files) == len(set(source_files))

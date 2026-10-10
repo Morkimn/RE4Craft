@@ -102,6 +102,8 @@ namespace skycraft::proto
 		kMcDead = 1u << 5,
 		kMcSwimming = 1u << 6,
 		kMcFlying = 1u << 7,
+		kMcCreative = 1u << 8,
+		kMcSpectator = 1u << 9,
 	};
 
 	struct McState
@@ -182,6 +184,7 @@ namespace skycraft::proto
 		kInReleaseAll = 6,   // release every held key/button (input focus left MC)
 		kInHurt = 7,         // Skyrim hit the player: code = HurtKind, a = Skyrim damage * 100, b = attacker FormID, c = HurtFlags
 		kInOpenMenu = 8,     // open Minecraft's pause/options menu
+		kInHurtDirected = 9, // code = HurtKind, a = damage * 100, b/c = float bits of source MC x/z
 	};
 
 	enum HurtKind : std::uint16_t
@@ -249,6 +252,8 @@ namespace skycraft::proto
 		                    // flags = flight pitch (float bits), weapon = arrow texture (0 plain, 1 tipped, 2 spectral)
 		kEvSkillUse = 5,    // the player used a Skyrim skill in Minecraft: formId = Skyrim skill (ActorValue: 9 Block,
 		                    // 10 Smithing, 11 Heavy Armor, 12 Light Armor), a = uses (as Skyrim's AdvanceSkill counts them)
+		kEvHitRayStart = 6, // RE4 adapter: a/b/c = actual attack ray start, precedes HitActor
+		kEvHitRayEnd = 7,   // RE4 adapter: a/b/c = actual attack ray end, precedes HitActor
 	};
 
 	enum HitFlags : std::uint32_t

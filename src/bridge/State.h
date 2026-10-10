@@ -24,6 +24,7 @@ void TerrainUpdate(Vec feet,unsigned epoch,bool refresh);
 void RenderGuest(IDirect3DDevice9* device);
 void NativeDraw(IDirect3DDevice9* device);
 void NativeTarget(IDirect3DDevice9* device,unsigned index,IDirect3DSurface9* next);
+void NativeDepth(IDirect3DDevice9* device,IDirect3DSurface9* next);
 void NativeClear(IDirect3DDevice9* device,unsigned flags);
 void NativeBegin();
 void NativeEnd(IDirect3DDevice9* device);

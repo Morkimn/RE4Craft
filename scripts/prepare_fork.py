@@ -59,6 +59,16 @@ patch_source('dllmain.cpp', 're4t::cfg->ReadSettings();', 're4t::cfg->ReadSettin
 patch_source('Game.cpp', '\tcSceSys__scheduler(thisptr, unused);', '\tcSceSys__scheduler(thisptr, unused);\n\tMashupTick();')
 patch_source('Game.cpp', '\tcSceSys__scheduler(thisptr, unused);\n\tMashupTick();', '\tBridgeBeforeTick();\n\tcSceSys__scheduler(thisptr, unused);\n\tMashupTick();')
 patch_source('Game.cpp', '#include "Mashup.h"', '#include "Mashup.h"\n#include "bridge/Bridge.h"')
+# Upgrade the earlier inline action shim without leaving duplicate helpers.
+game_file = FORK / 'Game.cpp'
+game_text = game_file.read_text(encoding='utf-8-sig')
+legacy = '\nnamespace {\nuint64_t bridgeActionOn='
+if legacy in game_text:
+    start = game_text.index(legacy)
+    end = game_text.index('\nJOY* Joy_ptr', start)
+    game_file.write_text(game_text[:start] + '\n' + game_text[end:], encoding='utf-8')
+patch_source('Game.cpp', 'return *(uint64_t*)(ptrKey_btn_trg);\n}',
+             'return *(uint64_t*)(ptrKey_btn_trg);\n}\n#include "bridge/NativeButtons.inc"')
 patch_source('Input.cpp', '#include "input.hpp"', '#include "input.hpp"\n#include "bridge/Bridge.h"')
 patch_source('Input.cpp', 'MSG details = *static_cast<const MSG*>(message_data);', 'MSG details = *static_cast<const MSG*>(message_data);\n\tif (BridgeWindowMessage(details)) return true;')
 if 'MashupCamera(thisptr, p_offset, p_aim)' in (FORK/'Trainer.cpp').read_text(encoding='utf-8-sig'):
@@ -77,6 +87,7 @@ patch_source('D3D9hook.cpp', '#include "D3D9Hook.h"', '#include "D3D9Hook.h"\n#i
 for name in ('DrawIndexedPrimitive','DrawIndexedPrimitiveUP','DrawPrimitive','DrawPrimitiveUP'):
     patch_source('D3D9hook.cpp', f'\treturn m_direct3DDevice9->{name}(', f'\tBridgeNativeDraw(m_direct3DDevice9);\n\treturn m_direct3DDevice9->{name}(')
 patch_source('D3D9hook.cpp', '\treturn m_direct3DDevice9->SetRenderTarget(RenderTargetIndex, pRenderTarget);', '\tBridgeNativeTarget(m_direct3DDevice9, RenderTargetIndex, pRenderTarget);\n\treturn m_direct3DDevice9->SetRenderTarget(RenderTargetIndex, pRenderTarget);')
+patch_source('D3D9hook.cpp', '\treturn m_direct3DDevice9->SetDepthStencilSurface(pNewZStencil);', '\tBridgeNativeDepth(m_direct3DDevice9, pNewZStencil);\n\treturn m_direct3DDevice9->SetDepthStencilSurface(pNewZStencil);')
 patch_source('D3D9hook.cpp', '\treturn m_direct3DDevice9->Clear(Count, pRects, Flags, Color, Z, Stencil);', '\tBridgeNativeClear(m_direct3DDevice9, Flags);\n\treturn m_direct3DDevice9->Clear(Count, pRects, Flags, Color, Z, Stencil);')
 patch_source('D3D9hook.cpp', '\treturn m_direct3DDevice9->BeginScene();', '\tBridgeNativeBegin();\n\treturn m_direct3DDevice9->BeginScene();')
 patch_source('D3D9hook.cpp', '\t// Used to render our ImGui interface', '\tBridgeNativeEnd(m_direct3DDevice9);\n\t// Used to render our ImGui interface')

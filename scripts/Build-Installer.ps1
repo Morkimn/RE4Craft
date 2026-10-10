@@ -10,7 +10,7 @@ if(!(Test-Path -LiteralPath $taskCompiler)){throw '.NET Framework C# compiler no
 if(!$FabricJar){$FabricJar=Join-Path $taskRoot 'build\dependencies\fabric-api-0.161.0+26.3.jar'}
 $taskResources=@{
     'native.dll' = Join-Path $taskRoot 'build\bridge\dinput8.dll'
-    'guest.jar' = Join-Path $taskRoot 'build\guest\skycraft-0.1.2-re4.1.jar'
+    'guest.jar' = Join-Path $taskRoot 'build\guest\skycraft-0.1.2-re4.2.jar'
     'fabric.jar' = $FabricJar
     'settings.ini' = Join-Path $taskRoot 'tools\re4_tweaks\settings\settings.ini'
     'trainer.ini' = Join-Path $taskRoot 'tools\re4_tweaks\settings\trainer_settings.ini'
@@ -18,7 +18,7 @@ $taskResources=@{
     'GUIDE_RU.md' = Join-Path $taskRoot 'GUIDE_RU.md'
     'theme.mp3' = Join-Path $taskRoot 'installer\assets\theme.mp3'
 }
-$taskOut=Join-Path $taskRoot 'dist\RE4Craft-0.3.2-installer3'
+$taskOut=Join-Path $taskRoot 'dist\RE4Craft-0.3.3'
 if($TestBuild){$taskOut=Join-Path $taskRoot 'build\installer-tests'}
 if($OutputDirectory){$taskOut=[IO.Path]::GetFullPath($OutputDirectory)}
 New-Item -ItemType Directory -Path $taskOut -Force | Out-Null

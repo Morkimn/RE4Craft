@@ -2,10 +2,24 @@
 #include "../src/bridge/SolidGrid.h"
 #include "../src/bridge/SurfaceVoxels.h"
 #include "../src/bridge/ToggleKey.h"
+#include "../src/bridge/HitGeometry.h"
 #include <cassert>
 #include <cmath>
 #include <iostream>
 int main(){
+ using re4craft::segmentCapsule;
+ // A hit crosses the body even when its starting point is outside it.
+ assert(std::abs(segmentCapsule({-3,1,0},{3,1,0},{0,0,0},{0,2,0},.25)-2.75/6)<1e-9);
+ assert(!std::isfinite(segmentCapsule({-3,3,0},{3,3,0},{0,0,0},{0,2,0},.25)));
+ assert(std::abs(segmentCapsule({0,4,0},{0,-2,0},{0,0,0},{0,2,0},.25)-1.75/6)<1e-9);
+ assert(segmentCapsule({0,1,0},{3,1,0},{0,0,0},{0,2,0},.25)==0);
+ assert(std::abs(segmentCapsule({-2,0,0},{2,0,0},{0,0,0},{0,0,0},.5)-.375)<1e-9);
+ assert(!std::isfinite(segmentCapsule({-2,0,0},{-1,0,0},{0,0,0},{0,0,0},.5)));
+ // World coordinates near the campaign's first house must keep precision.
+ assert(std::abs(segmentCapsule({-79283,860,-40208},{-79277,860,-40208},{-79280,859,-40208},{-79280,861,-40208},.25)-2.75/6)<1e-9);
+ double body=segmentCapsule({-3,1,0},{3,1,0},{0,.4,0},{0,1.2,0},.25);
+ double head=segmentCapsule({-3,1,0},{3,1,0},{0,1.6,0},{0,1.7,0},.2);
+ assert(std::isfinite(body)&&!std::isfinite(head)); // body cannot become a headshot
  re4craft::ToggleKey key;assert(key.update(true));assert(!key.update(true));assert(!key.update(true)); // held-key repeats
  assert(!key.update(false));assert(!key.update(false));assert(key.update(true));key.reset();assert(key.update(true));
  re4craft::Projection p;

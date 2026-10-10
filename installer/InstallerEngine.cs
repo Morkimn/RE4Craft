@@ -27,7 +27,7 @@ namespace RE4CraftSetup {
   // Fingerprint of the supported image with only its LAA bit and PE checksum cleared.
   const string SupportedNormalizedExe = "1C121D4CC199616A86375F3AB157BEE2DF1C7D83CB980021778D5A6DD45BF53D";
   const int SupportedLaaOffset = 0x14e, SupportedChecksumOffset = 0x190;
-  public const string Version = "0.3.2";
+  public const string Version = "0.3.3";
   readonly string storage, expectedExe;
   readonly Func<string, byte[]> payload;
   readonly Action<string> log;

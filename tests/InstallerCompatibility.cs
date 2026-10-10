@@ -89,7 +89,10 @@ static class InstallerCompatibility {
    Verify(root, "other-header-flag", changedHeader, false);
    Verify(root, "truncated", laa.Take(1024).ToArray(), false);
    Verify(root, "empty", new byte[0], false);
-   InstallerEngine.SelfTest(root);
+   // Keep legacy .NET Framework enumeration below MAX_PATH. Nesting another
+   // GUID fixture in root made the archived level.dat path exactly 260 chars;
+   // it existed, but this test process's Directory.GetFiles omitted it.
+   InstallerEngine.SelfTest(Path.GetFullPath(args[1]));
    Require(File.ReadAllBytes(args[0]).SequenceEqual(original), "Owned source executable changed");
    File.WriteAllText(Path.Combine(root, "compatibility-result.txt"), "PASS: original, exact friend 4GB hash, LAA-only, checksum-only; code/header changes, truncation and empty input refused; install/update/uninstall and existing self-tests passed.\n");
    Console.WriteLine("PASS: source executable untouched; synthetic rollback/backups/world tests passed");

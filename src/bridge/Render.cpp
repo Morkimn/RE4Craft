@@ -14,7 +14,7 @@ struct Mesh {std::vector<P::RenVertex> vertices;std::vector<P::RenBatch> batches
 std::map<std::tuple<int,int,int>,Mesh> sections;
 std::map<unsigned,ComPtr<IDirect3DTexture9>> textures;
 Mesh avatar,scene;
-Mesh entitiesMesh;
+Mesh entitiesMesh,cracksMesh;
 P::WorldEntities entities{};
 std::map<std::tuple<int,int,int>,std::vector<P::RenLight>> blockLights;
 using LightKey=std::tuple<int,int,int>;
@@ -33,6 +33,8 @@ unsigned overlayW=0,overlayH=0;
 bool flip=false;
 uint64_t overlayFrame=0;
 unsigned drawnTriangles=0;
+unsigned failedDraws=0;
+HRESULT lastDrawError=S_OK;
 ULONGLONG lastRenderLog=0;
 Projection worldProjection;
 D3DVIEWPORT9 worldViewport{};
@@ -205,12 +207,19 @@ void drawMesh(IDirect3DDevice9* d,const Mesh& mesh,Vec origin,bool section){
    for(int k=0;k<3;k++){auto& v=mesh.vertices[i+k];worldProjection.clip(w[k].x,w[k].y,w[k].z,triangle[k].p);shade(w[k],normal,v,triangle[k].c);triangle[k].u=v.u;triangle[k].v=v.v;}
    appendTriangle(triangle,output);
   }
-  if(!output.empty()){drawnTriangles+=unsigned(output.size()/3);d->DrawPrimitiveUP(D3DPT_TRIANGLELIST,unsigned(output.size()/3),output.data(),sizeof(Vertex));}
+  if(!output.empty()){auto hr=d->DrawPrimitiveUP(D3DPT_TRIANGLELIST,unsigned(output.size()/3),output.data(),sizeof(Vertex));if(SUCCEEDED(hr))drawnTriangles+=unsigned(output.size()/3);else{++failedDraws;lastDrawError=hr;}}
  }
 }
 void quad(Mesh& mesh,const Vec* p,const float* uv,uint32_t color=0xffffffff){
  const int indices[]={0,1,2,0,2,3};const float u[]={uv[0],uv[2],uv[2],uv[0]},v[]={uv[1],uv[1],uv[3],uv[3]};
  for(int k:indices)mesh.vertices.push_back({p[k].x,p[k].y,p[k].z,u[k],v[k],color,0x0f0f,1});
+}
+void box(Mesh& mesh,Vec center,Vec size,float yaw,const float uv[3][4],uint32_t tint){
+ const float c=std::cos(yaw),s=std::sin(yaw);Vec corners[8];
+ for(int i=0;i<8;i++){float x=(i&1?1.f:-1.f)*size.x*.5f,z=(i&4?1.f:-1.f)*size.z*.5f;
+  corners[i]=center+Vec{c*x-s*z,(i&2?1.f:-1.f)*size.y*.5f,s*x+c*z};}
+ const unsigned faces[6][4]={{0,1,3,2},{5,4,6,7},{4,0,2,6},{1,5,7,3},{2,3,7,6},{4,5,1,0}};
+ for(unsigned f=0;f<6;f++){Vec q[4];for(unsigned k=0;k<4;k++)q[k]=corners[faces[f][k]];quad(mesh,q,uv[f==4?1:f==5?2:0],tint?tint:0xffffffff);}
 }
 void arrow(Mesh& mesh,Vec position,Vec dir,const float uv[3][4],bool trident){
  Vec side=unit(Vec{dir.z,0,-dir.x}),up=unit(cross(side,dir));Vec fins[]={(up+side)*.70710678f,(up-side)*.70710678f};
@@ -229,19 +238,23 @@ Vec toLocal(const Mtx& mat,Vec p,bool point){
 }
 Vec toWorld(const Mtx& m,Vec p,bool point){return {m[0][0]*p.x+m[0][1]*p.y+m[0][2]*p.z+(point?m[0][3]:0),m[1][0]*p.x+m[1][1]*p.y+m[1][2]*p.z+(point?m[1][3]:0),m[2][0]*p.x+m[2][1]*p.y+m[2][2]*p.z+(point?m[2][3]:0)};}
 void buildEntities(){
- entitiesMesh={};if(!skycraft::Link::Get().ReadWorldEntities(entities))entities.count=0;
+ entitiesMesh={};cracksMesh={};if(!skycraft::Link::Get().ReadWorldEntities(entities))entities.count=0;
  for(unsigned i=0;i<std::min(entities.count,P::kMaxWorldEntities);i++){
   const auto& e=entities.entities[i];Vec p{e.x,e.y+512,e.z};if(!std::isfinite(p.x+p.y+p.z))continue;
   if(e.kind==P::kWeArrow||e.kind==P::kWeTrident){float y=e.yaw*.0174532925f,pi=e.pitch*.0174532925f;Vec dir{std::sin(y)*std::cos(pi),std::sin(pi),std::cos(y)*std::cos(pi)};
    if(e.kind==P::kWeArrow){memcpy(arrowUvs[0],e.uv,sizeof(e.uv));haveArrowUvs[0]=true;}
    arrow(entitiesMesh,p,dir,e.uv,e.kind==P::kWeTrident);
-  }else if(e.kind==P::kWeItem){float y=e.yaw*.0174532925f,h=e.scale*.5f;Vec r{std::cos(y)*h,0,std::sin(y)*h};Vec q[]={p-r+Vec{0,h,0},p+r+Vec{0,h,0},p+r-Vec{0,h,0},p-r-Vec{0,h,0}};quad(entitiesMesh,q,e.uv[0]);}
+  }else if(e.kind==P::kWeItem){float y=e.yaw*.0174532925f,h=e.scale*.5f;Vec r{std::cos(y)*h,0,std::sin(y)*h};Vec q[]={p-r+Vec{0,h,0},p+r+Vec{0,h,0},p+r-Vec{0,h,0},p-r-Vec{0,h,0}};quad(entitiesMesh,q,e.uv[0]);
+  }else if(e.kind==P::kWeBlock&&e.scale>0&&e.scale<=4){box(entitiesMesh,p,{e.scale,e.scale,e.scale},e.yaw*.0174532925f,e.uv,e.tint);
+  }else if(e.kind==P::kWeCrack){Vec size{e.ext[0],e.ext[1],e.ext[2]};if(!std::isfinite(size.x+size.y+size.z)||size.x<=0||size.y<=0||size.z<=0||size.x>32||size.y>32||size.z>32)continue;
+   float uv[3][4];for(auto& face:uv)memcpy(face,e.uv[0],sizeof(face));box(cracksMesh,p+size*.5f,size,0,uv,0xffffffff);}
  }
  for(auto i=stuck.begin();i!=stuck.end();){
   if(!i->actor->IsValid()||i->actor->guid_F8!=i->guid||i->actor->childParts_F4!=i->root||GetTickCount64()-i->time>60000){i=stuck.erase(i);continue;}
   if(haveArrowUvs[0]){Vec p=toWorld(i->bone->mat_C,i->position,true)/1000.f,dir=unit(toWorld(i->bone->mat_C,i->direction,false));arrow(entitiesMesh,p,dir,arrowUvs[0],false);}++i;
  }
  if(!entitiesMesh.vertices.empty())entitiesMesh.batches.push_back({0,0,unsigned(entitiesMesh.vertices.size()),0});
+ if(!cracksMesh.vertices.empty())cracksMesh.batches.push_back({0,0,unsigned(cracksMesh.vertices.size()),1});
 }
 unsigned shadowTriangles=0;
 void drawShadows(IDirect3DDevice9* d){
@@ -280,13 +293,15 @@ void updateOverlay(IDirect3DDevice9* d){
 void finishWorld(IDirect3DDevice9* d,const char* reason){
  if(!worldActive)return;worldActive=false;
  if(worldDrawn||!MinecraftVisible()||!skycraft::Link::Get().McAlive())return;
- worldDrawn=true;drawnTriangles=0;
+ drawnTriangles=failedDraws=0;lastDrawError=S_OK;
  ComPtr<IDirect3DStateBlock9> saved;if(FAILED(d->CreateStateBlock(D3DSBT_ALL,&saved)))return;saved->Capture();
+ worldDrawn=true;
  setup(d);d->SetViewport(&worldViewport);
  gatherLights();buildEntities();drawShadows(d);
  for(auto& [key,mesh]:sections){auto [x,y,z]=key;drawMesh(d,mesh,skycraft::McToSky(x*16.,y*16.,z*16.),true);}
  drawMesh(d,scene,skycraft::McToSky(sceneHeader.originX,sceneHeader.originY,sceneHeader.originZ),false);
  drawMesh(d,entitiesMesh,Vec{},false);
+ drawMesh(d,cracksMesh,Vec{},false);
  if(drawCamera.cameraMode!=0)drawMesh(d,avatar,drawCamera.feet,false);
  static bool armorLogged=false;
  if(!armorLogged&&!avatar.vertices.empty())for(const auto& b:avatar.batches)if(b.texture==3&&b.count){
@@ -297,7 +312,8 @@ void finishWorld(IDirect3DDevice9* d,const char* reason){
  if(GetTickCount64()-lastRenderLog>5000){lastRenderLog=GetTickCount64();
   ComPtr<IDirect3DSurface9> depth;auto hr=d->GetDepthStencilSurface(&depth);D3DSURFACE_DESC ds{};if(depth)depth->GetDesc(&ds);
   spd::log()->info("RE4CRAFT world render boundary={} nativeDraws={} sections={} sceneVertices={} triangles={} depthHr={} depth={}x{} vp={}x{} gxScale={:.4f},{:.4f} zFunc={}",reason,nativeWorldDraws,sections.size(),scene.vertices.size(),drawnTriangles,hr,ds.Width,ds.Height,worldViewport.Width,worldViewport.Height,worldProjection.correction[0],worldProjection.correction[5],worldDepthFunc);
-  spd::log()->info("RE4CRAFT renderer camera={}/{} missed={} solidsSections={} entityVertices={} stuck={} shadowTriangles={} nativeLights={} blockLights={} linkedLights={}",cameraMatches,cameraSubmits,missedWorldFrames,solids.sections.size(),entitiesMesh.vertices.size(),stuck.size(),shadowTriangles,nativeLights.size(),minecraftLights.size(),placedNativeLights.size());
+  spd::log()->info("RE4CRAFT renderer camera={}/{} missed={} solidsSections={} entities={} entityVertices={} crackVertices={} stuck={} shadowTriangles={} nativeLights={} blockLights={} linkedLights={}",cameraMatches,cameraSubmits,missedWorldFrames,solids.sections.size(),entities.count,entitiesMesh.vertices.size(),cracksMesh.vertices.size(),stuck.size(),shadowTriangles,nativeLights.size(),minecraftLights.size(),placedNativeLights.size());
+  if(failedDraws)spd::log()->warn("RE4CRAFT world draw errors={} lastHr={}",failedDraws,lastDrawError);
  }
 }
 }
@@ -358,6 +374,12 @@ void NativeClear(IDirect3DDevice9* d,unsigned flags){if(flags&(D3DCLEAR_TARGET|D
 void NativeTarget(IDirect3DDevice9* d,unsigned index,IDirect3DSurface9* next){
  if(index||!worldActive)return;ComPtr<IDirect3DSurface9> current;
  if(SUCCEEDED(d->GetRenderTarget(0,&current))&&current.Get()!=next)finishWorld(d,"target-change");
+}
+void NativeDepth(IDirect3DDevice9* d,IDirect3DSurface9* next){
+ // The campaign post-processing pass detaches depth before changing target.
+ // Submit Minecraft while the original target AND its depth are still bound.
+ if(!worldActive)return;ComPtr<IDirect3DSurface9> current;
+ if(SUCCEEDED(d->GetDepthStencilSurface(&current))&&current.Get()!=next)finishWorld(d,"depth-change");
 }
 void NativeDraw(IDirect3DDevice9* d){
  if(!MinecraftVisible()||worldDrawn||!locateGx())return;

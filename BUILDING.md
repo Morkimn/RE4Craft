@@ -36,11 +36,13 @@ $env:JAVA_HOME = 'C:\path\to\jdk-25'
 Push-Location tools/PeakCraft/fabric
 .\gradlew.bat build
 Pop-Location
-python scripts/build_guest_patch.py
-# Результат: build/guest/skycraft-0.1.2-re4.1.jar
+python scripts/build_guest_patch.py --original tools/PeakCraft/fabric/build/libs/skycraft-0.1.2.jar --libraries 'C:\path\to\Prism\libraries' --fabric-api build/dependencies/fabric-api-0.161.0+26.3.jar
+# Результат: build/guest/skycraft-0.1.2-re4.2.jar
 ```
 
-Либо передайте путь к оригинальному SkyCraft 0.1.2 через `--original` и Java через `--java-home`. Скрипт заменяет только классы SkyRay и метаданные мода; исходный JAR остаётся на месте. Minecraft-клиент и его ресурсы в результат не копируются. Gradle получает зависимости штатно.
+Либо передайте путь к имеющемуся SkyCraft 0.1.2 через `--original` и Java через `--java-home`. Папка `--libraries` должна содержать установленный Minecraft 26.3 и его зависимости. Скрипт заменяет классы из `src/guest`, регистрирует исправление поиска пути и обновляет метаданные; исходный JAR остаётся на месте. Minecraft-клиент и его ресурсы в результат не копируются. Gradle получает зависимости штатно.
+
+Параметр `--test-mod` дополнительно собирает отдельный `re4craft-integration-test.jar` из `tests/GuestIntegration.java`. Только для разработки: положите его рядом с гостевым модом, запустите обычную комнату RE4 и дождитесь подключения мира. Временные сущности проверяют голема, поиск пути на native полу и направление блока щита; результат записывается в `re4craft-integration-results.txt` и строки `RE4CRAFT_TEST` журнала Minecraft. Затем закройте игры и уберите тестовый JAR. Установщик его не включает.
 
 ## Проверки
 
@@ -58,7 +60,7 @@ msbuild tests/projection.vcxproj /p:Configuration=Release /p:Platform=Win32
 
 ```powershell
 New-Item -ItemType Directory -Path build/compatibility-tests -Force
-Copy-Item dist/RE4Craft-0.3.2-installer3/RE4Craft-Setup.exe* build/compatibility-tests/
+Copy-Item dist/RE4Craft-0.3.3/RE4Craft-Setup.exe* build/compatibility-tests/
 & "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /out:build\compatibility-tests\InstallerCompatibility.exe /reference:build\compatibility-tests\RE4Craft-Setup.exe tests\InstallerCompatibility.cs
 .\build\compatibility-tests\InstallerCompatibility.exe 'C:\path\to\Resident Evil 4\Bin32\bio4.exe' build/compatibility-tests
 ```
@@ -72,6 +74,6 @@ Copy-Item dist/RE4Craft-0.3.2-installer3/RE4Craft-Setup.exe* build/compatibility
 python scripts/package_release.py
 ```
 
-Итоговый EXE содержит DLL, два модовых JAR, настройки, профиль Prism, руководство и `installer/assets/theme.mp3`. Манифест требует администратора для папок Program Files. Рядом с EXE должен оставаться `RE4Craft-Setup.exe.config` для масштабирования. ZIP содержит EXE, его конфигурацию, документацию, лицензии и контрольные суммы. `package_release.py` составляет исходный пакет по явному списку и проверяет отсутствие игровых файлов, журналов и личных путей. Выпуск установщика находится в `dist/RE4Craft-0.3.2-installer3`; игровые DLL и JAR не изменены.
+Итоговый EXE содержит DLL, два модовых JAR, настройки, профиль Prism, руководство и `installer/assets/theme.mp3`. Манифест требует администратора для папок Program Files. Рядом с EXE должен оставаться `RE4Craft-Setup.exe.config` для масштабирования. ZIP содержит EXE, его конфигурацию, документацию, лицензии и контрольные суммы. `package_release.py` составляет исходный пакет по явному списку и проверяет отсутствие игровых файлов, журналов и личных путей. Выпуск находится в `dist/RE4Craft-0.3.3`.
 
 Установщик не подписан. Сборка на разных машинах может отличаться хешем из-за компилятора и метаданных PE; SHA256SUMS относится к конкретному опубликованному выпуску.
